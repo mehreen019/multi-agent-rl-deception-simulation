@@ -23,7 +23,7 @@ except ImportError as exe:
         "Install it with `pip install supersuit`."
     ) from exe
 
-from multi_agent_deception.environment import parallel_env
+from src.multi_agent_deception.environment import parallel_env
 
 
 def make_env(grid_size: int, num_agents: int, tasks_per_agent: int, max_steps: int, task_duration: int):
@@ -35,9 +35,10 @@ def make_env(grid_size: int, num_agents: int, tasks_per_agent: int, max_steps: i
         max_steps=max_steps,
         task_duration=task_duration,
     )
-    env = parallel_to_aec(env)
-    env = wrappers.AssertOutOfBoundsWrapper(env)
-    env = wrappers.OrderEnforcingWrapper(env)
+    #env = parallel_to_aec(env)
+
+    #env = wrappers.AssertOutOfBoundsWrapper(env)
+    #env = wrappers.OrderEnforcingWrapper(env)
     return env
 
 

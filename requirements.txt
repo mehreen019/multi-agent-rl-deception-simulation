@@ -1,6 +1,7 @@
 gymnasium
 numpy
 pettingzoo
-stable-baselines3
+stable-baselines3[extra]
 supersuit
 pygame
+tensorboard

@@ -56,15 +56,8 @@ All code lives under `src`, so set `PYTHONPATH=src` when running local modules.
 - **Train PPO agents**
 
   ```bash
-  PYTHONPATH=src python scripts/train_simple.py \
-      --timesteps 20000 \
-      --grid-size 8 \
-      --num-agents 4 \
-      --tasks-per-agent 3 \
-      --max-steps 200 \
-      --task-duration 3 \
-      --learning-rate 3e-4 \
-      --output-dir artifacts
+  $env:PYTHONPATH = '.'
+  python -m scripts.train_simple --timesteps 20000 --grid-size 8 --num-agents 4 --tasks-per-agent 3 --max-steps 200 --task-duration 3 --learning-rate 3e-4 --output-dir artifacts
   ```
 
   The script saves `artifacts/ppo_simple_hidden_role.zip` and (optionally) TensorBoard logs under `artifacts/tensorboard/`.
