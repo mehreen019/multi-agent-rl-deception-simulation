@@ -26,28 +26,18 @@ pip install -U pip
 pip install -r requirements.txt
 ```
 
-All code lives under `src`, so set `PYTHONPATH=src` when running local modules.
+All code lives under `src`, and the scripts automatically add it to the Python path.
 
 ## Usage
 
 - **Smoke test the environment**
 
   ```bash
-  PYTHONPATH=src python3 - <<'PY'
-  from multi_agent_deception.environment import parallel_env
+  # On Windows (PowerShell):
+  python -c "import sys; sys.path.insert(0, '.'); from src.multi_agent_deception.environment import parallel_env; env = parallel_env(grid_size=8, num_agents=4, tasks_per_agent=3, max_steps=200, task_duration=3); observations, infos = env.reset(seed=42); print('Agents:', list(observations)); print('Agent_0 observation shape:', observations['agent_0'].shape)"
 
-  env = parallel_env(grid_size=8, num_agents=4, tasks_per_agent=3, max_steps=200, task_duration=3)
-  observations, infos = env.reset(seed=42)
-  print("Agents:", list(observations))
-  print("Agent_0 observation shape:", observations["agent_0"].shape)
-
-  for step in range(3):
-      actions = {agent: env.action_space(agent).sample() for agent in env.agents}
-      observations, rewards, terminations, truncations, infos = env.step(actions)
-      print(f"Step {step} rewards:", rewards)
-      if not env.agents:
-          break
-  PY
+  # On Linux/Mac:
+  python3 -c "import sys; sys.path.insert(0, '.'); from src.multi_agent_deception.environment import parallel_env; env = parallel_env(grid_size=8, num_agents=4, tasks_per_agent=3, max_steps=200, task_duration=3); observations, infos = env.reset(seed=42); print('Agents:', list(observations)); print('Agent_0 observation shape:', observations['agent_0'].shape)"
   ```
 
   This runs the actual environment with random actions and prints live rewards.
@@ -56,28 +46,26 @@ All code lives under `src`, so set `PYTHONPATH=src` when running local modules.
 - **Train PPO agents**
 
   ```bash
-  $env:PYTHONPATH = '.'
-  python -m scripts.train_simple --timesteps 20000 --grid-size 8 --num-agents 4 --tasks-per-agent 3 --max-steps 200 --task-duration 3 --learning-rate 3e-4 --output-dir artifacts
+  # Windows (PowerShell) or Command Prompt:
+  python scripts/train_simple.py --timesteps 20000 --grid-size 8 --num-agents 4 --tasks-per-agent 3 --max-steps 200 --task-duration 3 --learning-rate 3e-4 --output-dir artifacts
+
+  # Linux/Mac:
+  python3 scripts/train_simple.py --timesteps 20000 --grid-size 8 --num-agents 4 --tasks-per-agent 3 --max-steps 200 --task-duration 3 --learning-rate 3e-4 --output-dir artifacts
   ```
 
   The script saves `artifacts/ppo_simple_hidden_role.zip` and (optionally) TensorBoard logs under `artifacts/tensorboard/`.
 
 - **Evaluate a trained model**
 
-  ```python
-  from stable_baselines3 import PPO
-  from supersuit import pettingzoo_env_to_vec_env_v1
-  from pettingzoo.utils import parallel_to_aec
-  from multi_agent_deception.environment import parallel_env
+  ```bash
+  # Windows (PowerShell) or Command Prompt:
+  python scripts/run_trained.py --model-path artifacts/ppo_simple_hidden_role.zip --episodes 5 --deterministic
 
-  env = parallel_env(task_duration=3)
-  vec_env = pettingzoo_env_to_vec_env_v1(parallel_to_aec(env))
-  model = PPO.load("artifacts/ppo_simple_hidden_role.zip")
-  obs = vec_env.reset()
-  action, _ = model.predict(obs, deterministic=True)
+  # Linux/Mac:
+  python3 scripts/run_trained.py --model-path artifacts/ppo_simple_hidden_role.zip --episodes 5 --deterministic
   ```
 
-  Extend with a rollout loop to gather statistics or render trajectories.
+  This will run 5 evaluation episodes and display per-agent rewards. Add `--render-ascii` to see the grid visualization.
 
 ## Key Implementation Notes
 
@@ -85,25 +73,60 @@ All code lives under `src`, so set `PYTHONPATH=src` when running local modules.
 - Tasks now require the agent to remain on the corresponding tile for `task_duration` consecutive steps (default `3`) before they are marked complete; progress resets if the agent leaves early.
 - Actions map to cardinal moves with boundary clipping; collisions are allowed (agents can share a tile).
 - Rewards are shaped directly inside `step`, and termination/truncation dictionaries follow PettingZoo’s parallel API.
-- `train_simple.py` wraps the environment with `parallel_to_aec`, `AssertOutOfBoundsWrapper`, and `OrderEnforcingWrapper` before converting to a Stable-Baselines3 compatible vector environment via SuperSuit.
+- `train_simple.py` converts to a Stable-Baselines3 compatible vector environment via SuperSuit.
 - `scripts/play_gui.py` uses Pygame to visualise the grid, tasks, agent positions, and per-task progress bars while you control one agent locally.
 - Hyperparameters (`n_steps=256`, `batch_size=256`) target small cooperative maps; modify in the script if you scale the scenario.
 
-## Troubleshooting
-
-- `ModuleNotFoundError`: ensure commands are run with `PYTHONPATH=src`.
-- `ImportError: stable-baselines3` or `supersuit`: missing dependencies—rerun `pip install -r requirements.txt`.
-- Want richer logs? Install TensorBoard and launch `tensorboard --logdir artifacts/tensorboard`.
-
-For a detailed explanation of the math and game-theoretic motivation behind this environment, read `README_THEORETICAL.md`.
 - **Interactive GUI**
 
   ```bash
-  PYTHONPATH=src python scripts/play_gui.py \
-      --grid-size 8 \
-      --num-agents 4 \
-      --tasks-per-agent 3 \
-      --task-duration 3
-  ```
+  # Windows (PowerShell) or Command Prompt:
+  python scripts/play_gui.py --grid-size 8 --num-agents 4 --tasks-per-agent 3 --max-steps 200 --task-duration 3 --seed 42 --fps 8
 
+  # Linux/Mac:
+  python3 scripts/play_gui.py --grid-size 8 --num-agents 4 --tasks-per-agent 3 --max-steps 200 --task-duration 3 --seed 42 --fps 8
+  ```
   Control agent `0` with the arrow keys (space to stay). Other agents take random actions so you can observe task progress, the hold-to-complete mechanic, and termination behaviour. Use `R` to reset, `P` to pause, and close the window to exit.
+
+- **Run demo GUI with heuristic agents (RECOMMENDED)**
+  ```bash
+  # Windows (PowerShell) or Command Prompt:
+  python scripts/play_demo_gui.py --fps 8
+
+  # Linux/Mac:
+  python3 scripts/play_demo_gui.py --fps 8
+  ```
+  Watch intelligent heuristic agents navigate to their tasks! This demonstrates the environment working properly.
+  - Agents use a simple heuristic: move towards the nearest incomplete task
+  - Use `--random` flag for random movement instead
+  - Use `R` to reset, `P` to pause, and close the window to exit
+
+- **Run GUI with trained model** ⚠️ (Note: Current trained model needs improvement)
+  ```bash
+  # Windows (PowerShell) or Command Prompt:
+  python scripts/play_trained_gui.py --model-path artifacts/ppo_simple_hidden_role.zip --deterministic --fps 8
+
+  # Linux/Mac:
+  python3 scripts/play_trained_gui.py --model-path artifacts/ppo_simple_hidden_role.zip --deterministic --fps 8
+  ```
+  **Known Issue**: The current PPO model learned a degenerate policy (action 0 / stay). The environment works correctly, but the reward structure may need tuning for effective RL training. Use the demo GUI above to see working agents!
+
+## Troubleshooting
+
+- `ModuleNotFoundError`: The scripts now handle imports automatically. If issues persist, ensure you're running from the repository root directory.
+- `ImportError: stable-baselines3` or `supersuit`: missing dependencies—rerun `pip install -r requirements.txt`.
+- **Agents not moving in trained model**: This is a known issue. The PPO model learned to always output action 0 (stay), likely due to:
+  - Sparse rewards making it difficult to learn
+  - Small movement penalty (-0.01) discouraging exploration
+  - Random task/agent placement making consistent learning difficult
+
+  **Solutions**:
+  - Use `play_demo_gui.py` to see working heuristic agents
+  - Improve reward shaping (e.g., reward progress towards tasks, distance-based rewards)
+  - Increase exploration (higher entropy coefficient)
+  - Curriculum learning (start with easier scenarios)
+  - Use the manual control GUI (`play_gui.py`) to play yourself
+
+- Want richer logs? Install TensorBoard and launch `tensorboard --logdir artifacts/tensorboard`.
+
+For a detailed explanation of the math and game-theoretic motivation behind this environment, read `README_THEORETICAL.md`.

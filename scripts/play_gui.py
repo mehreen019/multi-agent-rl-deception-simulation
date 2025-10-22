@@ -5,6 +5,10 @@ from __future__ import annotations
 import argparse
 import pathlib
 import sys
+from pathlib import Path
+
+# Add parent directory to path to allow imports
+sys.path.insert(0, str(Path(__file__).parent.parent))
 
 try:
     import pygame  # noqa: F401  # ensure dependency is installed before opening window
@@ -14,7 +18,7 @@ except ModuleNotFoundError as exc:
         "or `pip install -r requirements.txt`."
     ) from exc
 
-from multi_agent_deception.gui import run_gui
+from src.multi_agent_deception.gui import run_gui
 
 
 def parse_args() -> argparse.Namespace:
