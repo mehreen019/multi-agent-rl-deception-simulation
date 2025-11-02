@@ -27,7 +27,7 @@ class SimpleHiddenRoleParallelEnv(ParallelEnv):
         seed: int | None = None,
     ) -> None:
         self.grid_size = grid_size
-        self.num_agents = num_agents
+        self._num_agents = num_agents
         self.tasks_per_agent = tasks_per_agent
         self.max_steps = max_steps
         self.task_duration = max(1, task_duration)
@@ -35,7 +35,7 @@ class SimpleHiddenRoleParallelEnv(ParallelEnv):
         self._rng = np.random.default_rng(seed)
         self.render_mode: str | None = None
 
-        self.possible_agents = [f"agent_{i}" for i in range(self.num_agents)]
+        self.possible_agents = [f"agent_{i}" for i in range(self._num_agents)]
         self.agents: List[AgentID] = []
 
         self._action_space = spaces.Discrete(5)  # stay, up, down, left, right
@@ -207,6 +207,11 @@ class SimpleHiddenRoleParallelEnv(ParallelEnv):
 
     def action_space(self, agent: AgentID):
         return self._action_space
+
+    @property
+    def num_agents(self) -> int:
+        """Return number of agents."""
+        return self._num_agents
 
 
 def parallel_env(**kwargs) -> SimpleHiddenRoleParallelEnv:
